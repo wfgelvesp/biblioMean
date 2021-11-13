@@ -52,5 +52,5 @@ const updateProviders = async (req, res) => {
   
     return res.status(200).send("provider deleted");
   };
- 
+     
 export default {registerProvider,listProviders,updateProviders,deleteProvider};

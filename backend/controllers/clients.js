@@ -1,4 +1,7 @@
 import client from "../models/clients.js"
+import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
+import moment  from "moment";
  //registrar cliente
  const  registerClient= async(req,res)=>{
      if(!req.body.name ||!req.body.email) return res.status(400).send("Data incomplete");
@@ -7,11 +10,13 @@ import client from "../models/clients.js"
 
      if(existingClient) return res.status(400).send("Client Existing");
 
+    const hash = await bcrypt.hash(req.body.password,10) ;
+
      const clienteSchema = new client(
          {
              name:req.body.name,
              email:req.body.email,
-             password:req.body.password,
+             password:hash,
              dbStatus:true
          }
      );
@@ -34,16 +39,25 @@ const updateClient = async (req, res) => {
     if (!req.body.name || !req.body.email)
       return res.status(400).send("Incomplete data");
   
+    let pass="";
+    if(req.body.password){
+      pass= await bcrypt.hash(req.body.password,10);
+    }
+    else{
+      const clientFind= await cliente.findOne({email:req.body.email});
+      pass=clientFind.password;
+    }
+
     const existingClient = await client.findOne({
       name: req.body.name,
-      email: req.body.email
+      email: req.body.email,
+      password:pass
     });
     if (existingClient) return res.status(400).send("the client alrady exist");
   
     const clientUpdate = await client.findByIdAndUpdate(req.body._id, {
       name: req.body.name,
       email: req.body.email,      
-      password:req.body.password
 
     });
     if (!clientUpdate) return res.status(400).send("Error editing client");
@@ -63,4 +77,35 @@ const updateClient = async (req, res) => {
   
     return res.status(200).send({ clientId });
   };
- export default {registerClient,listClient,updateClient,deleteClient,findClient};
+
+  const login = async (req, res) => {
+    if (!req.body.email || !req.body.password)
+      return res.status(400).send({ message: "Incomplete data" });
+  
+    const clientLogin = await client.findOne({ email: req.body.email });
+    if (!clientLogin)
+      return res.status(400).send({ message: "Wrong email or password2" });
+    
+    const hash= await bcrypt.compare(req.body.password,clientLogin.password);
+    if(!hash) return res.status(400).send({ message: "Wrong email or password 1" });
+    console.log(hash)
+  
+      try {
+        return res.status(200).json({
+          token: jwt.sign({
+            _id:clientLogin._id,
+            name:clientLogin.name,
+            email:clientLogin.email,
+            iat:moment().unix(),
+          },
+          process.env.SECRET_KEY_JWT
+          )
+        });
+        
+      } catch (error) {
+        return res.status(400).send({message:"Login ERROR "})
+      }
+  };
+  
+  
+ export default {registerClient,listClient,updateClient,deleteClient,findClient,login};
