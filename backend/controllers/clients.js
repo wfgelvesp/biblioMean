@@ -27,6 +27,37 @@ import moment  from "moment";
      return res.status(200).send({result});
  }
 
+ //registrar admin
+ const registerAdmin = async (req, res) => {
+  if (
+    !req.body.name ||
+    !req.body.email ||
+    !req.body.password ||
+    !req.body.roleId
+  )
+    return res.status(400).send({ message: "Incomplete data" });
+
+  const existingClient = await client.findOne({ email: req.body.email });
+  if (existingClient)
+    return res.status(400).send({ message: "The user is already registered" });
+
+  const passHash = await bcrypt.hash(req.body.password, 10);
+
+  const userClient = new client({
+    name: req.body.name,
+    email: req.body.email,
+    password: passHash,
+    roleId: req.body.roleId,
+    dbStatus: true,
+  });
+
+  const result = await userClient.save();
+  return !result
+    ? res.status(400).send({ message: "Failed to register user" })
+    : res.status(200).send({ result });
+};
+
+
  const listClient = async (req,res)=>{
     const clientSchema= await client.find();
 
@@ -108,4 +139,4 @@ const updateClient = async (req, res) => {
   };
   
   
- export default {registerClient,listClient,updateClient,deleteClient,findClient,login};
+ export default {registerClient,listClient,updateClient,deleteClient,findClient,login,registerAdmin};

@@ -5,6 +5,7 @@ import dotenv from "dotenv";
 import  client from "./routes/clients.js";
 import book from "./routes/books.js";
 import providers from "./routes/providers.js";
+import role from "./routes/roles.js";
 
 dotenv.config();
 
@@ -16,6 +17,7 @@ app.use(cors());
 app.use("/api/providers",providers);
 app.use("/api/clients",client);
 app.use("/api/books",book);
+app.use("/api/roles",role);
 
 
 app.listen(process.env.PORT,()=>console.log("puerto "+process.env.PORT));
